@@ -1,0 +1,63 @@
+server {
+    server_name tiqnia.com www.tiqnia.com;
+    location = /favicon.ico { access_log off; log_not_found off; }
+ 
+
+    location /static/ {
+        root /home/amr/tiqnia;
+    }
+  
+    location /media/ {
+        root /home/amr/tiqnia;
+    }
+
+   location / {
+       include proxy_params;
+       proxy_pass http://unix:/home/amr/tiqnia/ace.sock;
+   }
+
+   location /manage {
+	root /home/amr/manage;
+#        proxy_pass http://unix:/home/amr/manage/manage.sock;
+        proxy_redirect off;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+   location ~ /manage\.php$ {
+       try_files $uri =404;
+       fastcgi_split_path_info ^(.+\.php)(/.+)$;
+       fastcgi_pass unix:/var/run/php7.2-fpm.sock;
+       fastcgi_index index.php;
+       include fastcgi_params;
+   }
+
+    listen 443 ssl; # managed by Certbot
+    ssl_certificate /etc/letsencrypt/live/tiqnia.com/fullchain.pem; # managed by Certbot
+    ssl_certificate_key /etc/letsencrypt/live/tiqnia.com/privkey.pem; # managed by Certbot
+    include /etc/letsencrypt/options-ssl-nginx.conf; # managed by Certbot
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem; # managed by Certbot
+
+
+}
+server {
+    if ($host = www.tiqnia.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    if ($host = tiqnia.com) {
+        return 301 https://$host$request_uri;
+    } # managed by Certbot
+
+
+    listen 80;
+    server_name tiqnia.com www.tiqnia.com;
+    return 404; # managed by Certbot
+
+
+
+
+}
